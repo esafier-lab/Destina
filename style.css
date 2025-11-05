@@ -64,4 +64,14 @@ body {
   @media (max-width: 600px) {
     #itinerary { flex-direction: column; align-items: center; }
   }
+  a {
+    color: #0077b6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  a:hover {
+    color: #023e8a;
+    text-decoration: underline;
+  }
   
