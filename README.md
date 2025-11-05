@@ -2,7 +2,8 @@
 **AI-Powered Travel Planner**
 
 ## 🚀 Live Site
-👉 [View on Vercel](https://destina-kaj1efa0g-esafier-labs-projects.vercel.app/)
+👉 [View on Vercel](https://destina-three.vercel.app/)
+
 
 ## 📄 Product Requirements Document (PRD)
 📘 [View PRD](projectDocs/PRD.md)
