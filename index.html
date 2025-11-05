@@ -1,172 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Destina — AI Travel Planner</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Destina – AI Travel Planner</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <header>
-        <h1>🌍 Destina</h1>
-        <p>AI-Powered Travel Planner</p>
-    </header>
+  <header>
+    <h1>Destina 🌍</h1>
+    <p>Your AI-powered travel companion</p>
+  </header>
 
-    <main>
-        <!-- Trip Input Form -->
-        <section id="input-section" class="card">
-            <h2>Plan Your Perfect Trip</h2>
-            <form id="trip-form">
-                <div class="form-group">
-                    <label for="origin">Origin (Optional)</label>
-                    <input type="text" id="origin" name="origin" placeholder="e.g., New York, NY">
-                </div>
+  <main>
+    <section id="search-section">
+      <h2>Plan Your Trip</h2>
+      <form id="tripForm">
+        <input type="text" id="destination" placeholder="Enter destination..." required />
+        <input type="number" id="days" placeholder="Days" required min="1" />
+        <input type="number" id="budget" placeholder="Budget ($)" required min="100" />
+        <select id="style" required>
+          <option value="">Trip style</option>
+          <option>Fun</option>
+          <option>Cultural</option>
+          <option>Religious</option>
+        </select>
+        <button type="submit">Generate Itinerary</button>
+      </form>
+    </section>
 
-                <div class="form-group">
-                    <label for="destination">Destination</label>
-                    <input type="text" id="destination" name="destination" placeholder="e.g., Paris, Tokyo, New York" required>
-                </div>
+    <section id="results" class="hidden">
+      <h2>Your AI Itinerary</h2>
+      <div id="itinerary"></div>
+    </section>
+  </main>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="start-date">Start Date</label>
-                        <input type="date" id="start-date" name="start-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="end-date">End Date</label>
-                        <input type="date" id="end-date" name="end-date" required>
-                    </div>
-                </div>
+  <footer>
+    <p>© 2025 Destina | Plan smarter, travel happier 💙</p>
+  </footer>
 
-                <div class="form-group">
-                    <label for="budget">Total Budget ($)</label>
-                    <input type="number" id="budget" name="budget" placeholder="e.g., 1500" min="100" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="adults">Adults</label>
-                        <select id="adults" name="adults" required>
-                            <option value="1">1</option>
-                            <option value="2" selected>2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5+</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="kids">Kids</label>
-                        <select id="kids" name="kids">
-                            <option value="0" selected>0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4+</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="trip-style">Trip Style</label>
-                    <select id="trip-style" name="trip-style" required>
-                        <option value="fun">🎉 Fun & Adventure</option>
-                        <option value="cultural">🏛️ Cultural & Historical</option>
-                        <option value="religious">🕊️ Religious & Spiritual</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="diet">Dietary Preferences</label>
-                    <select id="diet" name="diet">
-                        <option value="">No restrictions</option>
-                        <option value="kosher">Kosher</option>
-                        <option value="halal">Halal</option>
-                        <option value="veg">Vegetarian/Vegan</option>
-                    </select>
-                </div>
-
-                <button type="submit" id="generate-btn">Generate My Plan</button>
-            </form>
-        </section>
-
-        <!-- Itinerary Display -->
-        <section id="itinerary-section" class="card hidden">
-            <div class="itinerary-header">
-                <h2 id="itinerary-title">Your Trip to <span id="destination-display"></span></h2>
-                <div class="itinerary-meta">
-                    <span id="trip-dates"></span> • <span id="group-size"></span> • <span id="trip-style-display"></span>
-                </div>
-            </div>
-
-            <div id="itinerary-content">
-                <!-- Days will be dynamically generated here -->
-            </div>
-
-            <div class="budget-summary">
-                <h3>Budget Summary</h3>
-                <div class="budget-breakdown">
-                    <div class="budget-item">
-                        <span>Accommodation:</span>
-                        <span id="accommodation-total">$0</span>
-                    </div>
-                    <div class="budget-item">
-                        <span>Food & Dining:</span>
-                        <span id="food-total">$0</span>
-                    </div>
-                    <div class="budget-item">
-                        <span>Activities:</span>
-                        <span id="activities-total">$0</span>
-                    </div>
-                    <div class="budget-item total">
-                        <span>Total Estimated:</span>
-                        <span id="total-estimated">$0</span>
-                    </div>
-                    <div class="budget-item">
-                        <span>Your Budget:</span>
-                        <span id="user-budget">$0</span>
-                    </div>
-                    <div class="budget-item" id="budget-status">
-                        <span>Status:</span>
-                        <span id="budget-status-text">Within Budget</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <a id="directions-link" href="#" target="_blank" class="btn-secondary">🗺️ Get Directions</a>
-                <button id="copy-link-btn" class="btn-secondary">📋 Copy Link</button>
-                <button id="print-pdf-btn" class="btn-secondary">🖨️ Print / PDF</button>
-                <button id="new-trip-btn" class="btn-primary">Plan Another Trip</button>
-            </div>
-
-            <!-- Real Places Section -->
-            <div id="real-results" class="card hidden">
-                <h3>Real Places Near Your Destination</h3>
-                <div class="tabs">
-                    <button class="tab active" data-tab="hotels">🏨 Hotels</button>
-                    <button class="tab" data-tab="food">🍽️ Food</button>
-                    <button class="tab" data-tab="sights">🎯 Sights</button>
-                </div>
-                
-                <div id="hotels" class="tabpanel active">
-                    <div id="hotels-list"></div>
-                </div>
-                
-                <div id="food" class="tabpanel">
-                    <div id="food-list"></div>
-                </div>
-                
-                <div id="sights" class="tabpanel">
-                    <div id="sights-list"></div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Destina. AI-powered travel planning made simple.</p>
-    </footer>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
