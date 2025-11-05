@@ -1,14 +1,27 @@
-# Destina 🌍
-Your AI-powered travel planner — built for the Product Requirements & Prototype assignment.
+# Destina 🌍  
+**AI-Powered Travel Planner**
 
 ## 🚀 Live Site
-👉 [View on Vercel](https://your-vercel-link.vercel.app)
+👉 [View on Vercel](https://destina-kaj1efa0g-esafier-labs-projects.vercel.app/)
 
-## 📄 PRD Document
+## 📄 Product Requirements Document (PRD)
 📘 [View PRD](projectDocs/PRD.md)
 
-## 🧠 About
-Destina helps travelers quickly generate budget-based itineraries using AI logic.  
-Built with vanilla **HTML, CSS, and JavaScript**, deployed on **Vercel**.
+## 💡 Overview
+Destina creates personalized, budget-based travel itineraries using AI logic.  
+Users input their destination, trip days, budget, and travel style, and Destina instantly generates a custom daily itinerary.
+
+## 🧩 Built With
+- HTML  
+- CSS  
+- JavaScript  
+- Deployed with [Vercel](https://vercel.com)
 
 ## 📂 Structure
+
+---
+
+## ✍️ Authors
+Developed by **Lily Sassoon** and **Emily Safier**  
+Sy Syms School of Business, Yeshiva University  
+For the *Product Requirements & Prototype Assignment – Fall 2025.*
