@@ -9,17 +9,18 @@ form.addEventListener("submit", (e) => {
   const days = parseInt(document.getElementById("days").value);
   const budget = parseFloat(document.getElementById("budget").value);
   const style = document.getElementById("style").value;
+  const dietary = document.getElementById("dietary").value;
 
   if (!destination || !days || !budget || !style) {
-    alert("Please fill in all fields.");
+    alert("Please fill in all required fields.");
     return;
   }
 
-  showItinerary(destination, days, budget, style);
+  showItinerary(destination, days, budget, style, dietary);
   button.textContent = "Regenerate Itinerary 🔄";
 });
 
-function showItinerary(destination, days, budget, style) {
+function showItinerary(destination, days, budget, style, dietary = "") {
   results.classList.remove("hidden");
   itinerary.innerHTML = "";
 
@@ -61,14 +62,24 @@ function showItinerary(destination, days, budget, style) {
   ];
 
   const restaurants = [
-    { name: "Top-rated restaurant", price: 50 },
-    { name: "Local vegan café", price: 25 },
-    { name: "Traditional diner", price: 20 },
-    { name: "Popular street food market", price: 15 },
-    { name: "Cozy bakery", price: 12 },
-    { name: "Seaside grill", price: 40 },
-    { name: "Fine dining experience", price: 80 },
-    { name: "Family-owned eatery", price: 18 }
+    { name: "Top-rated restaurant", price: 50, dietary: [] },
+    { name: "Local vegan café", price: 25, dietary: ["vegan", "vegetarian", "gluten-free"] },
+    { name: "Traditional diner", price: 20, dietary: [] },
+    { name: "Popular street food market", price: 15, dietary: [] },
+    { name: "Cozy bakery", price: 12, dietary: ["gluten-free"] },
+    { name: "Seaside grill", price: 40, dietary: [] },
+    { name: "Fine dining experience", price: 80, dietary: [] },
+    { name: "Family-owned eatery", price: 18, dietary: [] },
+    { name: "Kosher deli & restaurant", price: 30, dietary: ["kosher"] },
+    { name: "Kosher fine dining", price: 65, dietary: ["kosher"] },
+    { name: "Kosher café", price: 22, dietary: ["kosher"] },
+    { name: "Halal restaurant", price: 28, dietary: ["halal"] },
+    { name: "Halal grill", price: 35, dietary: ["halal"] },
+    { name: "Halal street food", price: 18, dietary: ["halal"] },
+    { name: "Gluten-free bistro", price: 32, dietary: ["gluten-free"] },
+    { name: "Vegetarian restaurant", price: 24, dietary: ["vegetarian", "vegan"] },
+    { name: "Vegan fine dining", price: 55, dietary: ["vegan", "vegetarian"] },
+    { name: "Plant-based café", price: 20, dietary: ["vegan", "vegetarian"] }
   ];
 
   const hotels = [
@@ -88,10 +99,25 @@ function showItinerary(destination, days, budget, style) {
   else if (style === "Cultural") activities = culturalActivities;
   else activities = religiousActivities;
 
+  // Filter restaurants by dietary restrictions if specified
+  let filteredRestaurants = restaurants;
+  let dietaryWarning = null;
+  if (dietary) {
+    filteredRestaurants = restaurants.filter(r => 
+      r.dietary && r.dietary.includes(dietary)
+    );
+    
+    // If no restaurants match the dietary restriction, show a warning
+    if (filteredRestaurants.length === 0) {
+      dietaryWarning = `⚠️ No ${dietary} restaurants found in our database. Showing all restaurants instead.`;
+      filteredRestaurants = restaurants; // Fall back to all restaurants
+    }
+  }
+
   // Filter options that fit within budget per day
   // We need: activity + restaurant + hotel <= budgetPerDay
   const affordableActivities = activities.filter(a => a.price <= budgetPerDay);
-  const affordableRestaurants = restaurants.filter(r => r.price <= budgetPerDay);
+  const affordableRestaurants = filteredRestaurants.filter(r => r.price <= budgetPerDay);
   const affordableHotels = hotels.filter(h => h.price <= budgetPerDay);
 
   // Further filter to ensure combinations are possible
@@ -130,6 +156,16 @@ function showItinerary(destination, days, budget, style) {
 
   // Encode destination for Google Maps
   const encodedDest = encodeURIComponent(destination);
+
+  // Show dietary warning if applicable
+  if (dietaryWarning) {
+    const warningCard = document.createElement("div");
+    warningCard.className = "card";
+    warningCard.style.backgroundColor = "#fff3cd";
+    warningCard.style.border = "2px solid #ffc107";
+    warningCard.innerHTML = `<p><strong>${dietaryWarning}</strong></p>`;
+    itinerary.appendChild(warningCard);
+  }
 
   // Track used combinations to avoid repetition
   const usedCombinations = new Set();
@@ -185,13 +221,19 @@ function showItinerary(destination, days, budget, style) {
     const restaurantLink = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name)}+in+${encodedDest}`;
     const hotelLink = `https://www.google.com/maps/search/${encodeURIComponent(hotel.name)}+in+${encodedDest}`;
 
+    // Check if restaurant matches dietary restriction
+    const hasDietaryMatch = dietary && restaurant.dietary && restaurant.dietary.includes(dietary);
+    const dietaryBadge = hasDietaryMatch 
+      ? ` <span style="background-color: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold;">${dietary.toUpperCase()}</span>`
+      : '';
+
     // Create itinerary card
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
       <h3>Day ${day}</h3>
       <p><strong>Morning:</strong> <a href="${activityLink}" target="_blank">${activity.name}</a> <span style="color: #666; font-size: 0.9em;">($${activity.price})</span></p>
-      <p><strong>Afternoon:</strong> <a href="${restaurantLink}" target="_blank">${restaurant.name}</a> <span style="color: #666; font-size: 0.9em;">($${restaurant.price})</span></p>
+      <p><strong>Afternoon:</strong> <a href="${restaurantLink}" target="_blank">${restaurant.name}</a>${dietaryBadge} <span style="color: #666; font-size: 0.9em;">($${restaurant.price})</span></p>
       <p><strong>Evening:</strong> <a href="${hotelLink}" target="_blank">${hotel.name}</a> <span style="color: #666; font-size: 0.9em;">($${hotel.price})</span></p>
       <p><em><strong>Day total: $${totalCost.toFixed(2)}</strong> (Budget: $${budgetPerDay.toFixed(2)})</em></p>
     `;
@@ -204,8 +246,10 @@ function showItinerary(destination, days, budget, style) {
   summaryCard.className = "card";
   summaryCard.style.backgroundColor = "#e8f5e9";
   summaryCard.style.border = "2px solid #4caf50";
+  const dietaryInfo = dietary ? `<p><strong>Dietary Preference:</strong> ${dietary.charAt(0).toUpperCase() + dietary.slice(1)}</p>` : '';
   summaryCard.innerHTML = `
     <h3>💰 Budget Summary</h3>
+    ${dietaryInfo}
     <p><strong>Total Budget:</strong> $${budget.toFixed(2)}</p>
     <p><strong>Estimated Total Cost:</strong> $${totalUsed.toFixed(2)}</p>
     <p><strong>Remaining:</strong> $${(budget - totalUsed).toFixed(2)}</p>
