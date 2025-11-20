@@ -3,63 +3,238 @@ const results = document.getElementById("results");
 const itinerary = document.getElementById("itinerary");
 const button = form.querySelector("button");
 
+// Function to calculate minimum budget needed based on inputs
+function calculateMinimumBudget(days, style, dietary) {
+  // Minimum hotel price
+  const minHotel = 70; // Old Town Lodge
+  
+  // Minimum activity price by style
+  let minActivity;
+  if (style === "Fun") minActivity = 20;
+  else if (style === "Cultural") minActivity = 10;
+  else minActivity = 0; // Religious
+  
+  // Minimum restaurant price (considering dietary restrictions)
+  let minRestaurant = 12; // Cozy bakery (cheapest overall)
+  
+  if (dietary) {
+    // Check minimum prices for each dietary restriction
+    const dietaryMinPrices = {
+      "kosher": 22,      // Kosher café
+      "halal": 18,       // Halal street food
+      "gluten-free": 12, // Cozy bakery (has gluten-free)
+      "vegetarian": 20,  // Plant-based café
+      "vegan": 20        // Plant-based café
+    };
+    
+    if (dietaryMinPrices[dietary]) {
+      minRestaurant = dietaryMinPrices[dietary];
+    }
+  }
+  
+  const minBudgetPerDay = minHotel + minRestaurant + minActivity;
+  return minBudgetPerDay * days;
+}
+
+// Auto-calculate days from dates
+document.getElementById("arrivalDate").addEventListener("change", updateDaysFromDates);
+document.getElementById("departureDate").addEventListener("change", updateDaysFromDates);
+
+function updateDaysFromDates() {
+  const arrivalDate = document.getElementById("arrivalDate").value;
+  const departureDate = document.getElementById("departureDate").value;
+  
+  if (arrivalDate && departureDate) {
+    const arrival = new Date(arrivalDate);
+    const departure = new Date(departureDate);
+    
+    if (departure > arrival) {
+      const diffTime = departure - arrival;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      document.getElementById("days").value = diffDays;
+    }
+  }
+}
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const destination = document.getElementById("destination").value.trim();
+  const arrivalDate = document.getElementById("arrivalDate").value;
+  const departureDate = document.getElementById("departureDate").value;
   const days = parseInt(document.getElementById("days").value);
   const budget = parseFloat(document.getElementById("budget").value);
+  const season = document.getElementById("season").value;
   const style = document.getElementById("style").value;
   const dietary = document.getElementById("dietary").value;
 
-  if (!destination || !days || !budget || !style) {
+  if (!destination || !arrivalDate || !departureDate || !days || !budget || !season || !style) {
     alert("Please fill in all required fields.");
     return;
   }
 
-  showItinerary(destination, days, budget, style, dietary);
+  // Validate dates
+  const arrival = new Date(arrivalDate);
+  const departure = new Date(departureDate);
+  
+  if (departure <= arrival) {
+    alert("Departure date must be after arrival date.");
+    return;
+  }
+
+  // Validate budget is positive
+  if (budget <= 0 || isNaN(budget)) {
+    alert("Please enter a valid budget amount greater than $0.");
+    return;
+  }
+
+  // Check if budget meets minimum requirements
+  const minBudget = calculateMinimumBudget(days, style, dietary);
+  if (budget < minBudget) {
+    const minPerDay = minBudget / days;
+    alert(`Budget too low! For a ${style.toLowerCase()} trip${dietary ? ` with ${dietary} dietary restrictions` : ''} of ${days} day${days > 1 ? 's' : ''}, you need at least $${minBudget.toFixed(2)} total ($${minPerDay.toFixed(2)} per day).`);
+    return;
+  }
+
+  showItinerary(destination, days, budget, season, style, dietary);
   button.textContent = "Regenerate Itinerary 🔄";
 });
 
-function showItinerary(destination, days, budget, style, dietary = "") {
+function showItinerary(destination, days, budget, season, style, dietary = "") {
   results.classList.remove("hidden");
   itinerary.innerHTML = "";
 
   // Calculate budget per day
   const budgetPerDay = budget / days;
 
-  // Lists of options with prices by travel style
-  const funActivities = [
-    { name: "Snorkeling at the beach", price: 45 },
-    { name: "Food truck tour around town", price: 30 },
-    { name: "Day at the amusement park", price: 80 },
-    { name: "Sunset cruise", price: 60 },
-    { name: "Outdoor music festival", price: 50 },
-    { name: "Ziplining or parasailing", price: 70 },
-    { name: "Boat ride on the lake", price: 40 },
-    { name: "Mountain hike or canyon walk", price: 20 }
-  ];
+  // Season-specific activity lists by travel style
+  const funActivities = {
+    summer: [
+      { name: "Snorkeling at the beach", price: 45 },
+      { name: "Beach volleyball or swimming", price: 20 },
+      { name: "Day at the water park", price: 60 },
+      { name: "Sunset cruise", price: 60 },
+      { name: "Outdoor music festival", price: 50 },
+      { name: "Parasailing or jet skiing", price: 70 },
+      { name: "Boat ride on the lake", price: 40 },
+      { name: "Outdoor adventure park", price: 55 }
+    ],
+    winter: [
+      { name: "Skiing or snowboarding", price: 80 },
+      { name: "Ice skating rink", price: 25 },
+      { name: "Indoor water park", price: 65 },
+      { name: "Winter festival or holiday market", price: 30 },
+      { name: "Hot springs or spa day", price: 70 },
+      { name: "Snowshoeing or winter hike", price: 35 },
+      { name: "Indoor rock climbing", price: 40 },
+      { name: "Museum or indoor entertainment", price: 30 }
+    ],
+    fall: [
+      { name: "Fall foliage tour", price: 40 },
+      { name: "Apple picking or harvest festival", price: 25 },
+      { name: "Hiking through autumn trails", price: 20 },
+      { name: "Pumpkin patch or corn maze", price: 30 },
+      { name: "Wine tasting tour", price: 55 },
+      { name: "Outdoor photography walk", price: 15 },
+      { name: "Harvest market visit", price: 20 },
+      { name: "Scenic train ride", price: 50 }
+    ],
+    spring: [
+      { name: "Cherry blossom viewing", price: 15 },
+      { name: "Spring flower garden tour", price: 25 },
+      { name: "Outdoor picnic in the park", price: 20 },
+      { name: "Bike tour through the city", price: 35 },
+      { name: "Spring festival or fair", price: 40 },
+      { name: "Wildlife watching tour", price: 45 },
+      { name: "Outdoor yoga or wellness class", price: 30 },
+      { name: "Scenic nature walk", price: 15 }
+    ]
+  };
 
-  const culturalActivities = [
-    { name: "Visit an art museum", price: 25 },
-    { name: "Take a historic city tour", price: 35 },
-    { name: "Local cooking class", price: 65 },
-    { name: "Explore the heritage village", price: 15 },
-    { name: "Watch a folk dance show", price: 30 },
-    { name: "Visit the national monument", price: 10 },
-    { name: "Browse a craft market", price: 20 },
-    { name: "Take a guided architecture walk", price: 40 }
-  ];
+  const culturalActivities = {
+    summer: [
+      { name: "Visit an art museum", price: 25 },
+      { name: "Take a historic city tour", price: 35 },
+      { name: "Local cooking class", price: 65 },
+      { name: "Explore the heritage village", price: 15 },
+      { name: "Watch an outdoor cultural show", price: 30 },
+      { name: "Visit the national monument", price: 10 },
+      { name: "Browse a summer craft market", price: 20 },
+      { name: "Take a guided architecture walk", price: 40 }
+    ],
+    winter: [
+      { name: "Visit an art museum", price: 25 },
+      { name: "Take a historic city tour", price: 35 },
+      { name: "Indoor cooking class", price: 65 },
+      { name: "Explore the heritage village", price: 15 },
+      { name: "Watch a theater performance", price: 45 },
+      { name: "Visit the national monument", price: 10 },
+      { name: "Browse a winter holiday market", price: 20 },
+      { name: "Take a guided architecture walk", price: 40 }
+    ],
+    fall: [
+      { name: "Visit an art museum", price: 25 },
+      { name: "Take a historic city tour", price: 35 },
+      { name: "Local cooking class with seasonal ingredients", price: 65 },
+      { name: "Explore the heritage village", price: 15 },
+      { name: "Watch a folk dance show", price: 30 },
+      { name: "Visit the national monument", price: 10 },
+      { name: "Browse a fall harvest market", price: 20 },
+      { name: "Take a guided architecture walk", price: 40 }
+    ],
+    spring: [
+      { name: "Visit an art museum", price: 25 },
+      { name: "Take a historic city tour", price: 35 },
+      { name: "Local cooking class", price: 65 },
+      { name: "Explore the heritage village", price: 15 },
+      { name: "Watch a spring cultural festival", price: 30 },
+      { name: "Visit the national monument", price: 10 },
+      { name: "Browse a spring craft market", price: 20 },
+      { name: "Take a guided architecture walk", price: 40 }
+    ]
+  };
 
-  const religiousActivities = [
-    { name: "Visit a historic synagogue or church", price: 0 },
-    { name: "Attend a Shabbat or Sunday service", price: 0 },
-    { name: "Walk a pilgrimage route", price: 10 },
-    { name: "Explore sacred gardens", price: 15 },
-    { name: "Visit a faith museum or cultural center", price: 20 },
-    { name: "Join a community volunteer project", price: 0 },
-    { name: "Attend a religious concert or event", price: 35 },
-    { name: "Tour an ancient temple or monastery", price: 25 }
-  ];
+  const religiousActivities = {
+    summer: [
+      { name: "Visit a historic synagogue or church", price: 0 },
+      { name: "Attend a Shabbat or Sunday service", price: 0 },
+      { name: "Walk a pilgrimage route", price: 10 },
+      { name: "Explore sacred gardens", price: 15 },
+      { name: "Visit a faith museum or cultural center", price: 20 },
+      { name: "Join a community volunteer project", price: 0 },
+      { name: "Attend an outdoor religious concert", price: 35 },
+      { name: "Tour an ancient temple or monastery", price: 25 }
+    ],
+    winter: [
+      { name: "Visit a historic synagogue or church", price: 0 },
+      { name: "Attend a Shabbat or Sunday service", price: 0 },
+      { name: "Walk a pilgrimage route", price: 10 },
+      { name: "Explore sacred gardens (indoor)", price: 15 },
+      { name: "Visit a faith museum or cultural center", price: 20 },
+      { name: "Join a community volunteer project", price: 0 },
+      { name: "Attend a holiday religious service", price: 0 },
+      { name: "Tour an ancient temple or monastery", price: 25 }
+    ],
+    fall: [
+      { name: "Visit a historic synagogue or church", price: 0 },
+      { name: "Attend a Shabbat or Sunday service", price: 0 },
+      { name: "Walk a pilgrimage route", price: 10 },
+      { name: "Explore sacred gardens", price: 15 },
+      { name: "Visit a faith museum or cultural center", price: 20 },
+      { name: "Join a community volunteer project", price: 0 },
+      { name: "Attend a religious concert or event", price: 35 },
+      { name: "Tour an ancient temple or monastery", price: 25 }
+    ],
+    spring: [
+      { name: "Visit a historic synagogue or church", price: 0 },
+      { name: "Attend a Shabbat or Sunday service", price: 0 },
+      { name: "Walk a pilgrimage route", price: 10 },
+      { name: "Explore sacred gardens", price: 15 },
+      { name: "Visit a faith museum or cultural center", price: 20 },
+      { name: "Join a community volunteer project", price: 0 },
+      { name: "Attend a spring religious festival", price: 35 },
+      { name: "Tour an ancient temple or monastery", price: 25 }
+    ]
+  };
 
   const restaurants = [
     { name: "Top-rated restaurant", price: 50, dietary: [] },
@@ -93,11 +268,11 @@ function showItinerary(destination, days, budget, style, dietary = "") {
     { name: "Skyline Tower Hotel", price: 160 }
   ];
 
-  // Pick which activity list to use
+  // Pick which activity list to use based on style and season
   let activities;
-  if (style === "Fun") activities = funActivities;
-  else if (style === "Cultural") activities = culturalActivities;
-  else activities = religiousActivities;
+  if (style === "Fun") activities = funActivities[season] || funActivities.summer;
+  else if (style === "Cultural") activities = culturalActivities[season] || culturalActivities.summer;
+  else activities = religiousActivities[season] || religiousActivities.summer;
 
   // Filter restaurants by dietary restrictions if specified
   let filteredRestaurants = restaurants;
@@ -137,18 +312,15 @@ function showItinerary(destination, days, budget, style, dietary = "") {
 
   // Check if we have valid combinations
   if (validCombinations.length === 0) {
-    // Calculate minimum required budget based on travel style
-    const minHotel = 70; // Old Town Lodge
-    const minRestaurant = 12; // Cozy bakery
-    const minActivity = style === "Fun" ? 20 : (style === "Cultural" ? 10 : 0);
-    const minBudgetPerDay = minHotel + minRestaurant + minActivity;
-    const minTotalBudget = minBudgetPerDay * days;
+    // Calculate minimum required budget using the same function
+    const minTotalBudget = calculateMinimumBudget(days, style, dietary);
+    const minBudgetPerDay = minTotalBudget / days;
     
     itinerary.innerHTML = `
       <div class="card" style="background-color: #ffebee; border: 2px solid #f44336;">
         <h3>⚠️ Budget Too Low</h3>
         <p>Your budget of $${budget.toFixed(2)} for ${days} day${days > 1 ? 's' : ''} ($${budgetPerDay.toFixed(2)} per day) is too low to create a complete itinerary.</p>
-        <p>For ${style} trips, you need at least $${minBudgetPerDay.toFixed(2)} per day ($${minTotalBudget.toFixed(2)} total) to include activity, food, and lodging.</p>
+        <p>For ${style} trips${dietary ? ` with ${dietary} dietary restrictions` : ''}, you need at least $${minBudgetPerDay.toFixed(2)} per day ($${minTotalBudget.toFixed(2)} total) to include activity, food, and lodging.</p>
       </div>
     `;
     return;
