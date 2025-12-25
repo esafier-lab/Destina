@@ -3,11 +3,11 @@ const results = document.getElementById("results");
 const itinerary = document.getElementById("itinerary");
 const button = form.querySelector("button");
 
-// Function to parse and normalize destination location
+// Function to validate and parse destination location - requires City, State, Country format
 function parseDestination(destination) {
   const dest = destination.trim();
   
-  // Common city abbreviations mapping
+  // Common city abbreviations mapping (for convenience, but still requires full format)
   const cityAbbreviations = {
     'nyc': 'New York City, NY, USA',
     'la': 'Los Angeles, CA, USA',
@@ -21,17 +21,26 @@ function parseDestination(destination) {
     'atl': 'Atlanta, GA, USA'
   };
   
-  // Check if it's a known abbreviation (case-insensitive)
+  // Check if it's a known abbreviation (case-insensitive) - these are allowed
   const lowerDest = dest.toLowerCase();
   if (cityAbbreviations[lowerDest]) {
-    return cityAbbreviations[lowerDest];
+    return { valid: true, normalized: cityAbbreviations[lowerDest] };
   }
   
-  // If destination already contains comma, assume it's formatted (city, state or city, state, country)
-  if (dest.includes(',')) {
-    const parts = dest.split(',').map(p => p.trim());
+  // Must contain at least two commas to have City, State, Country format
+  if (!dest.includes(',')) {
+    return { 
+      valid: false, 
+      error: 'Please enter destination in format: City, State, Country (e.g., New York, NY, USA)' 
+    };
+  }
+  
+  const parts = dest.split(',').map(p => p.trim());
+  
+  // Must have at least 3 parts (City, State, Country)
+  if (parts.length < 3) {
     if (parts.length === 2) {
-      // Format: "City, State" - add country if it's a US state
+      // If only City, State provided, try to add country for US states
       const state = parts[1].toUpperCase();
       const usStates = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
                        'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -40,20 +49,25 @@ function parseDestination(destination) {
                        'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
                        'DC'];
       if (usStates.includes(state) || state.length === 2) {
-        return `${parts[0]}, ${state}, USA`;
+        return { valid: true, normalized: `${parts[0]}, ${state}, USA` };
       }
     }
-    // If already has 3 parts, return as-is
-    if (parts.length >= 3) {
-      return dest;
-    }
-    return dest;
+    return { 
+      valid: false, 
+      error: 'Please enter destination in format: City, State, Country (e.g., New York, NY, USA)' 
+    };
   }
   
-  // If it's just a city name, try to detect if it needs more context
-  // For now, return as-is but the user should ideally provide more specific location
-  // We'll use the destination as-is in Google Maps which should handle it
-  return dest;
+  // Has 3 or more parts - validate that all parts are non-empty
+  if (parts[0] === '' || parts[1] === '' || parts[2] === '') {
+    return { 
+      valid: false, 
+      error: 'Please enter destination in format: City, State, Country (e.g., New York, NY, USA). All fields are required.' 
+    };
+  }
+  
+  // Valid format - return normalized (first 3 parts)
+  return { valid: true, normalized: `${parts[0]}, ${parts[1]}, ${parts[2]}` };
 }
 
 // Function to extract location components for filtering
@@ -161,7 +175,15 @@ form.addEventListener("submit", (e) => {
   }
 
   // Parse and normalize destination to ensure location-specific filtering
-  const normalizedDestination = parseDestination(destination);
+  // Must be in format: City, State, Country
+  const destinationResult = parseDestination(destination);
+  
+  if (!destinationResult.valid) {
+    alert(destinationResult.error);
+    return;
+  }
+  
+  const normalizedDestination = destinationResult.normalized;
   const locationInfo = extractLocationComponents(normalizedDestination);
 
   showItinerary(destination, normalizedDestination, locationInfo, days, budget, season, style, dietary);
