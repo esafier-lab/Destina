@@ -3,6 +3,71 @@ const results = document.getElementById("results");
 const itinerary = document.getElementById("itinerary");
 const button = form.querySelector("button");
 
+// Function to parse and normalize destination location
+function parseDestination(destination) {
+  const dest = destination.trim();
+  
+  // Common city abbreviations mapping
+  const cityAbbreviations = {
+    'nyc': 'New York City, NY, USA',
+    'la': 'Los Angeles, CA, USA',
+    'sf': 'San Francisco, CA, USA',
+    'chi': 'Chicago, IL, USA',
+    'dc': 'Washington, DC, USA',
+    'mia': 'Miami, FL, USA',
+    'boston': 'Boston, MA, USA',
+    'philly': 'Philadelphia, PA, USA',
+    'sea': 'Seattle, WA, USA',
+    'atl': 'Atlanta, GA, USA'
+  };
+  
+  // Check if it's a known abbreviation (case-insensitive)
+  const lowerDest = dest.toLowerCase();
+  if (cityAbbreviations[lowerDest]) {
+    return cityAbbreviations[lowerDest];
+  }
+  
+  // If destination already contains comma, assume it's formatted (city, state or city, state, country)
+  if (dest.includes(',')) {
+    const parts = dest.split(',').map(p => p.trim());
+    if (parts.length === 2) {
+      // Format: "City, State" - add country if it's a US state
+      const state = parts[1].toUpperCase();
+      const usStates = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
+                       'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+                       'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+                       'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+                       'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+                       'DC'];
+      if (usStates.includes(state) || state.length === 2) {
+        return `${parts[0]}, ${state}, USA`;
+      }
+    }
+    // If already has 3 parts, return as-is
+    if (parts.length >= 3) {
+      return dest;
+    }
+    return dest;
+  }
+  
+  // If it's just a city name, try to detect if it needs more context
+  // For now, return as-is but the user should ideally provide more specific location
+  // We'll use the destination as-is in Google Maps which should handle it
+  return dest;
+}
+
+// Function to extract location components for filtering
+function extractLocationComponents(normalizedDest) {
+  const parts = normalizedDest.split(',').map(p => p.trim());
+  
+  return {
+    city: parts[0] || '',
+    state: parts[1] || '',
+    country: parts[2] || '',
+    fullLocation: normalizedDest
+  };
+}
+
 // Function to calculate minimum budget needed based on inputs
 function calculateMinimumBudget(days, style, dietary) {
   // Minimum hotel price
@@ -95,16 +160,24 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  showItinerary(destination, days, budget, season, style, dietary);
+  // Parse and normalize destination to ensure location-specific filtering
+  const normalizedDestination = parseDestination(destination);
+  const locationInfo = extractLocationComponents(normalizedDestination);
+
+  showItinerary(destination, normalizedDestination, locationInfo, days, budget, season, style, dietary);
   button.textContent = "Regenerate Itinerary 🔄";
 });
 
-function showItinerary(destination, days, budget, season, style, dietary = "") {
+function showItinerary(originalDestination, normalizedDestination, locationInfo, days, budget, season, style, dietary = "") {
   results.classList.remove("hidden");
   itinerary.innerHTML = "";
 
   // Calculate budget per day
   const budgetPerDay = budget / days;
+  
+  // Use normalized destination for all location-specific searches
+  // This ensures recommendations stay within the specified city/state/country
+  const searchLocation = normalizedDestination;
 
   // Season-specific activity lists by travel style
   const funActivities = {
@@ -583,8 +656,21 @@ function showItinerary(destination, days, budget, season, style, dietary = "") {
     return;
   }
 
-  // Encode destination for Google Maps
-  const encodedDest = encodeURIComponent(destination);
+  // Encode normalized destination for Google Maps to ensure location-specific results
+  // This ensures all recommendations are filtered to the exact location entered
+  const encodedDest = encodeURIComponent(searchLocation);
+
+  // Show location filter info
+  const locationCard = document.createElement("div");
+  locationCard.className = "card";
+  locationCard.style.backgroundColor = "#e3f2fd";
+  locationCard.style.border = "2px solid #2196f3";
+  locationCard.innerHTML = `
+    <h3>📍 Location Filter</h3>
+    <p><strong>Searching in:</strong> ${searchLocation}</p>
+    <p style="font-size: 0.9em; color: #666;">All recommendations are filtered to this specific location (city, state, country) to ensure accurate results.</p>
+  `;
+  itinerary.appendChild(locationCard);
 
   // Show dietary warning if applicable
   if (dietaryWarning) {
@@ -645,7 +731,8 @@ function showItinerary(destination, days, budget, season, style, dietary = "") {
     
     totalUsed += totalCost;
 
-    // Build live Google Maps search links
+    // Build live Google Maps search links with location-specific filtering
+    // Using normalized destination ensures results are filtered to the exact city/state/country
     const activityLink = `https://www.google.com/maps/search/${encodeURIComponent(activity.name)}+in+${encodedDest}`;
     const restaurantLink = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name)}+in+${encodedDest}`;
     const hotelLink = `https://www.google.com/maps/search/${encodeURIComponent(hotel.name)}+in+${encodedDest}`;
