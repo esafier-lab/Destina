@@ -1,6 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 
-window.supabase = supabase; // 
+window.supabase = supabase;
+console.log("SUPABASE ATTACHED");
 
 
 const loginBtn = document.getElementById("google-login");
@@ -817,20 +818,24 @@ function showItinerary(originalDestination, normalizedDestination, locationInfo,
   `;
   itinerary.appendChild(summaryCard);
 }
-
-// Check auth state on load
-const { data: { session } } = await supabase.auth.getSession();
-
-if (session) {
-  showUser(session.user);
+async function initAuthUI() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    showUser(session.user);
+  }
 }
 
-// Listen for auth changes
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session) {
     showUser(session.user);
   }
+  updatePaymentUI();
 });
+
+// Run once on page load
+initAuthUI();
+updatePaymentUI();
+
 
 function showUser(user) {
   const header = document.querySelector("header");
