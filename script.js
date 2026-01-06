@@ -1,4 +1,8 @@
 import { supabase } from "./supabaseClient.js";
+
+window.supabase = supabase; // 
+
+
 const loginBtn = document.getElementById("google-login");
 
 if (loginBtn) {
