@@ -158,26 +158,36 @@ function updateDaysFromDates() {
     }
   }
 }
-
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  // 🔒 Require login
+  // 1️⃣ Require login
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     alert("Please sign in with Google first.");
     return;
   }
 
-  // 💳 Require payment
-  const paid = await userHasPaid();
-  if (!paid) {
-    alert("Please complete payment to generate your itinerary.");
-    document.getElementById("pay-button")?.scrollIntoView({ behavior: "smooth" });
+  // 2️⃣ Require payment
+  const { data, error } = await supabase
+    .from("users")
+    .select("has_paid")
+    .eq("id", session.user.id)
+    .single();
+
+  if (error) {
+    console.error(error);
+    alert("Unable to verify payment status. Please try again.");
     return;
   }
 
-  // ✅ Only paid users reach here
+  if (!data.has_paid) {
+    alert("Please pay to generate your itinerary.");
+    document.getElementById("pay-button")?.scrollIntoView({ behavior: "smooth" });
+    return; // ⛔ THIS LINE IS THE ENFORCEMENT
+  }
+
+  // 3️⃣ ONLY PAID USERS REACH HERE
   const destination = document.getElementById("destination").value.trim();
   const arrivalDate = document.getElementById("arrivalDate").value;
   const departureDate = document.getElementById("departureDate").value;
@@ -187,7 +197,7 @@ form.addEventListener("submit", async (e) => {
   const style = document.getElementById("style").value;
   const dietary = document.getElementById("dietary").value;
 
-  // (keep all your existing validation here)
+  // keep all your existing validation logic here
 
   showItinerary(
     destination,
@@ -202,6 +212,7 @@ form.addEventListener("submit", async (e) => {
 
   button.textContent = "Regenerate Itinerary 🔄";
 });
+
 
 function showItinerary(originalDestination, normalizedDestination, locationInfo, days, budget, season, style, dietary = "") {
   results.classList.remove("hidden");
