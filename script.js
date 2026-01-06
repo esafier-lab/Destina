@@ -15,6 +15,30 @@ const itinerary = document.getElementById("itinerary");
 const submitBtn = form.querySelector("button");
 
 /* =========================
+   AUTO-CALCULATE DAYS
+========================= */
+
+const arrivalInput = document.getElementById("arrivalDate");
+const departureInput = document.getElementById("departureDate");
+const daysInput = document.getElementById("days");
+
+function updateDaysFromDates() {
+  if (!arrivalInput.value || !departureInput.value) return;
+
+  const arrival = new Date(arrivalInput.value);
+  const departure = new Date(departureInput.value);
+
+  if (departure > arrival) {
+    const diffTime = departure - arrival;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    daysInput.value = diffDays;
+  }
+}
+
+arrivalInput?.addEventListener("change", updateDaysFromDates);
+departureInput?.addEventListener("change", updateDaysFromDates);
+
+/* =========================
    GOOGLE LOGIN
 ========================= */
 
