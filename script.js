@@ -866,7 +866,11 @@ async function startCheckout() {
 
   window.location.href = data.url;
 }
-document.getElementById("pay-button").addEventListener("click", startCheckout);
+const payBtn = document.getElementById("pay-button");
+if (payBtn) {
+  payBtn.addEventListener("click", startCheckout);
+}
+
 
 async function updatePaymentUI() {
   const payBtn = document.getElementById("pay-button");
@@ -898,5 +902,13 @@ async function updatePaymentUI() {
     payBtn.style.display = "inline-block";
   }
 }
+// Update payment UI on login/logout
+supabase.auth.onAuthStateChange(() => {
+  updatePaymentUI();
+});
+
+// Update payment UI on page load
+updatePaymentUI();
+
 
 
