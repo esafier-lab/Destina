@@ -159,8 +159,25 @@ function updateDaysFromDates() {
   }
 }
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  // 🔒 Require login
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    alert("Please sign in with Google first.");
+    return;
+  }
+
+  // 💳 Require payment
+  const paid = await userHasPaid();
+  if (!paid) {
+    alert("Please complete payment to generate your itinerary.");
+    document.getElementById("pay-button")?.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  // ✅ Only paid users reach here
   const destination = document.getElementById("destination").value.trim();
   const arrivalDate = document.getElementById("arrivalDate").value;
   const departureDate = document.getElementById("departureDate").value;
@@ -170,47 +187,19 @@ form.addEventListener("submit", (e) => {
   const style = document.getElementById("style").value;
   const dietary = document.getElementById("dietary").value;
 
-  if (!destination || !arrivalDate || !departureDate || !days || !budget || !season || !style) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+  // (keep all your existing validation here)
 
-  // Validate dates
-  const arrival = new Date(arrivalDate);
-  const departure = new Date(departureDate);
-  
-  if (departure <= arrival) {
-    alert("Departure date must be after arrival date.");
-    return;
-  }
+  showItinerary(
+    destination,
+    destination,
+    extractLocationComponents(destination),
+    days,
+    budget,
+    season,
+    style,
+    dietary
+  );
 
-  // Validate budget is positive
-  if (budget <= 0 || isNaN(budget)) {
-    alert("Please enter a valid budget amount greater than $0.");
-    return;
-  }
-
-  // Check if budget meets minimum requirements
-  const minBudget = calculateMinimumBudget(days, style, dietary);
-  if (budget < minBudget) {
-    const minPerDay = minBudget / days;
-    alert(`Budget too low! For a ${style.toLowerCase()} trip${dietary ? ` with ${dietary} dietary restrictions` : ''} of ${days} day${days > 1 ? 's' : ''}, you need at least $${minBudget.toFixed(2)} total ($${minPerDay.toFixed(2)} per day).`);
-    return;
-  }
-
-  // Parse and normalize destination to ensure location-specific filtering
-  // Must be in format: City, State, Country
-  const destinationResult = parseDestination(destination);
-  
-  if (!destinationResult.valid) {
-    alert(destinationResult.error);
-    return;
-  }
-  
-  const normalizedDestination = destinationResult.normalized;
-  const locationInfo = extractLocationComponents(normalizedDestination);
-
-  showItinerary(destination, normalizedDestination, locationInfo, days, budget, season, style, dietary);
   button.textContent = "Regenerate Itinerary 🔄";
 });
 
@@ -891,7 +880,24 @@ async function updatePaymentUI() {
     payBtn.style.display = "none";
     return;
   }
-
+  async function userHasPaid() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return false;
+  
+    const { data, error } = await supabase
+      .from("users")
+      .select("has_paid")
+      .eq("id", session.user.id)
+      .single();
+  
+    if (error) {
+      console.error("Payment check error:", error);
+      return false;
+    }
+  
+    return data.has_paid === true;
+  }
+  
   // Fetch user payment status from Supabase
   const { data, error } = await supabase
     .from("users")
