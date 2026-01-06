@@ -1,3 +1,22 @@
+import { supabase } from "./supabaseClient.js";
+const loginBtn = document.getElementById("google-login");
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      console.error(error);
+      alert("Google login failed");
+    }
+  });
+}
+
 const form = document.getElementById("tripForm");
 const results = document.getElementById("results");
 const itinerary = document.getElementById("itinerary");
@@ -793,4 +812,33 @@ function showItinerary(originalDestination, normalizedDestination, locationInfo,
     <p><strong>Remaining:</strong> $${(budget - totalUsed).toFixed(2)}</p>
   `;
   itinerary.appendChild(summaryCard);
+}
+
+// Check auth state on load
+const { data: { session } } = await supabase.auth.getSession();
+
+if (session) {
+  showUser(session.user);
+}
+
+// Listen for auth changes
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    showUser(session.user);
+  }
+});
+
+function showUser(user) {
+  const header = document.querySelector("header");
+  const btn = document.getElementById("google-login");
+  if (btn) btn.style.display = "none";
+
+  let userInfo = document.getElementById("user-info");
+  if (!userInfo) {
+    userInfo = document.createElement("p");
+    userInfo.id = "user-info";
+    header.appendChild(userInfo);
+  }
+
+  userInfo.textContent = `Signed in as ${user.email}`;
 }
