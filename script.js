@@ -842,3 +842,61 @@ function showUser(user) {
 
   userInfo.textContent = `Signed in as ${user.email}`;
 }
+
+async function startCheckout() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    alert("Please sign in with Google first.");
+    return;
+  }
+
+  const resp = await fetch("/api/create-checkout-session", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${session.access_token}`
+    }
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) {
+    console.error(data);
+    alert("Checkout failed.");
+    return;
+  }
+
+  window.location.href = data.url;
+}
+document.getElementById("pay-button").addEventListener("click", startCheckout);
+
+async function updatePaymentUI() {
+  const payBtn = document.getElementById("pay-button");
+  if (!payBtn) return;
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    payBtn.style.display = "none";
+    return;
+  }
+
+  // Fetch user payment status from Supabase
+  const { data, error } = await supabase
+    .from("users")
+    .select("has_paid")
+    .eq("id", session.user.id)
+    .single();
+
+  if (error) {
+    console.error("Payment status error:", error);
+    payBtn.style.display = "none";
+    return;
+  }
+
+  if (data.has_paid) {
+    payBtn.style.display = "none";
+  } else {
+    payBtn.style.display = "inline-block";
+  }
+}
+
+
