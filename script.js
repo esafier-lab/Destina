@@ -124,21 +124,23 @@ async function startCheckout() {
     return;
   }
 
-  const res = await fetch("/api/create-checkout-session", {
+  const resp = await fetch("/api/create-checkout-session", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.access_token}`
+      "Authorization": `Bearer ${session.access_token}`
     }
   });
-
-  const data = await res.json();
-  if (!res.ok) {
-    console.error(data);
-    alert("Checkout failed");
+  
+  const text = await resp.text();
+  
+  if (!resp.ok) {
+    console.error(text);
+    alert("Checkout failed. See console.");
     return;
   }
-
-  window.location.href = data.url;
+  
+  const data = JSON.parse(text);
+  window.location.href = data.url;  
 }
 
 if (payBtn) payBtn.addEventListener("click", startCheckout);
